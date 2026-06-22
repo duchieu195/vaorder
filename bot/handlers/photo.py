@@ -92,11 +92,13 @@ async def handle_confirm_order(update: Update, context: ContextTypes.DEFAULT_TYP
             order_date = date.fromisoformat(data["order_date"])
         except ValueError:
             pass
+    if order_date is None:
+        order_date = date.today()
 
     # Post inbox message first (we need its message_id)
     inbox_text = (
         f"📦 <b>{data['product_name']}</b> x{data['quantity']} — ¥{data['total_cny']:.0f}\n"
-        f"📅 {data.get('order_date') or 'không rõ'}\n"
+        f"📅 {order_date.strftime('%d/%m/%Y')}\n"
         f"📮 Tracking: <i>chưa có</i>"
     )
     inbox_msg = await context.bot.send_message(
@@ -131,6 +133,14 @@ async def handle_confirm_order(update: Update, context: ContextTypes.DEFAULT_TYP
     )
 
     await query.edit_message_text("✅ Đã lưu đơn hàng!", parse_mode="HTML")
+
+    # Tự xóa message xác nhận sau 3 giây
+    import asyncio
+    await asyncio.sleep(3)
+    try:
+        await query.delete_message()
+    except Exception:
+        pass
 
 
 async def handle_cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -179,6 +189,8 @@ async def manual_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except ValueError:
             await update.message.reply_text("❌ Sai định dạng. Dùng DD/MM/YYYY hoặc '-':")
             return MANUAL_DATE
+    if order_date is None:
+        order_date = date.today()
 
     m = context.user_data.pop("manual")
     qty = m["quantity"]
@@ -186,7 +198,7 @@ async def manual_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     inbox_text = (
         f"📦 <b>{m['product_name']}</b> x{qty} — ¥{total:.0f}\n"
-        f"📅 {order_date.strftime('%d/%m/%Y') if order_date else 'không rõ'}\n"
+        f"📅 {order_date.strftime('%d/%m/%Y')}\n"
         f"📮 Tracking: <i>chưa có</i>"
     )
     inbox_msg = await update.message.reply_text(

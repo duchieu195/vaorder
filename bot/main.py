@@ -1,9 +1,9 @@
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 from bot.config import TELEGRAM_TOKEN, TELEGRAM_USER_ID
-from bot.handlers.photo import build_photo_handler
+from bot.handlers.photo import build_photo_handler, handle_confirm_order, handle_cancel_order
 from bot.handlers.tracking import build_tracking_handler
 from bot.handlers.report import report_handler
 from bot.handlers.settings import setrate_handler, pending_handler
@@ -28,16 +28,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-def user_filter(update: Update) -> bool:
-    if update.effective_user is None:
-        return False
-    return update.effective_user.id == TELEGRAM_USER_ID
-
-
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Only allow the configured user
     user_only = filters.User(user_id=TELEGRAM_USER_ID)
 
     app.add_handler(CommandHandler("start", start, filters=user_only))
@@ -45,7 +38,11 @@ def main():
     app.add_handler(CommandHandler("setrate", setrate_handler, filters=user_only))
     app.add_handler(CommandHandler("pending", pending_handler, filters=user_only))
 
-    # ConversationHandlers (photo OCR flow + tracking flow)
+    # Callback handlers cho confirm/cancel đơn hàng
+    app.add_handler(CallbackQueryHandler(handle_confirm_order, pattern=r"^confirm_order$"))
+    app.add_handler(CallbackQueryHandler(handle_cancel_order, pattern=r"^cancel_order$"))
+
+    # ConversationHandlers
     app.add_handler(build_photo_handler(user_only))
     app.add_handler(build_tracking_handler())
 

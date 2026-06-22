@@ -31,5 +31,12 @@
     <p class="delivered-badge">✅ Đã giao: {{ order.delivered_at.strftime("%d/%m/%Y") }}</p>
     {% endif %}
   </div>
+
+  <div class="divider"></div>
+
+  <form method="post" action="/orders/{{ order.id }}/delete"
+        onsubmit="return confirm('Xóa đơn này? Không thể hoàn tác.')">
+    <button type="submit" class="btn-delete">🗑 Xóa đơn này</button>
+  </form>
 </div>
 {% endblock %}

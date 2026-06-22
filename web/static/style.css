@@ -35,6 +35,8 @@ tr:hover td { background: #fafafa; }
 input[type="date"] { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; flex: 1; }
 .btn-save { background: #1a1a2e; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
 .btn-save:hover { background: #2d2d5e; }
+.btn-delete { background: #fff; color: #c0392b; border: 1.5px solid #c0392b; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; width: 100%; }
+.btn-delete:hover { background: #fdf0ee; }
 .delivered-badge { margin-top: 12px; color: #2e7d32; font-weight: 600; }
 
 @media (max-width: 600px) {

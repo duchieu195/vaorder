@@ -1,23 +1,21 @@
 import base64
 import json
+import logging
 import os
 from pathlib import Path
 
-import anthropic
+import httpx
 
-_client = None
+logger = logging.getLogger(__name__)
 
-
-def _get_client():
-    global _client
-    if _client is None:
-        from bot.config import ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL
-        kwargs = {"api_key": ANTHROPIC_API_KEY}
-        if ANTHROPIC_BASE_URL:
-            kwargs["base_url"] = ANTHROPIC_BASE_URL
-        _client = anthropic.Anthropic(**kwargs)
-    return _client
-
+_api_key = os.getenv("ANTHROPIC_AUTH_TOKEN") or os.getenv("ANTHROPIC_API_KEY")
+_base_url = os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+_API_ENDPOINT = f"{_base_url.rstrip('/')}/v1/messages"
+_HEADERS = {
+    "x-api-key": _api_key,
+    "anthropic-version": "2023-06-01",
+    "content-type": "application/json",
+}
 
 EXTRACT_PROMPT = """Đây là ảnh đơn hàng từ Tmall hoặc Taobao (Trung Quốc).
 
@@ -47,11 +45,10 @@ def extract_order_from_image(image_path: str) -> dict | None:
     media_type_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
     media_type = media_type_map.get(ext, "image/jpeg")
 
-    client = _get_client()
-    response = client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=512,
-        messages=[{
+    payload = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 512,
+        "messages": [{
             "role": "user",
             "content": [
                 {
@@ -65,21 +62,25 @@ def extract_order_from_image(image_path: str) -> dict | None:
                 {"type": "text", "text": EXTRACT_PROMPT},
             ],
         }],
-    )
+    }
 
-    text = next((b.text for b in response.content if b.type == "text"), None)
-    if not text:
-        return None
+    resp = httpx.post(_API_ENDPOINT, headers=_HEADERS, json=payload, timeout=60)
+    resp.raise_for_status()
+    text = resp.json()["content"][0]["text"]
 
-    # Strip markdown code fences if present
+    logger.info("OCR raw response: %s", text)
+
     text = text.strip()
     if text.startswith("```"):
         lines = text.split("\n")
         text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
 
-    data = json.loads(text)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        logger.error("JSON parse error: %s | raw: %s", e, text)
+        return None
 
-    # Validate minimum required field
     if not data.get("total_cny"):
         return None
 

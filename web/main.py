@@ -39,7 +39,7 @@ async def index(request: Request, month: Optional[str] = None):
     else:
         y, m = now.year, now.month
 
-    orders = await _orders_for_month(y, m)
+    orders = [dict(o) for o in await _orders_for_month(y, m)]
 
     rate_str = await get_setting("exchange_rate")
     rate = float(rate_str) if rate_str else 3500.0
@@ -50,19 +50,22 @@ async def index(request: Request, month: Optional[str] = None):
     with_tracking = sum(1 for o in orders if o["tracking_number"])
     pending = sum(1 for o in orders if not o["tracking_number"])
 
-    return templates.TemplateResponse("orders.html", {
-        "request": request,
-        "orders": orders,
-        "year": y,
-        "month": m,
-        "total_cny": total_cny,
-        "total_vnd": total_vnd,
-        "rate": rate,
-        "delivered": delivered,
-        "with_tracking": with_tracking,
-        "pending": pending,
-        "selected_month": f"{y}-{m:02d}",
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="orders.html",
+        context={
+            "orders": orders,
+            "year": y,
+            "month": m,
+            "total_cny": total_cny,
+            "total_vnd": total_vnd,
+            "rate": rate,
+            "delivered": delivered,
+            "with_tracking": with_tracking,
+            "pending": pending,
+            "selected_month": f"{y}-{m:02d}",
+        },
+    )
 
 
 @app.get("/orders/{order_id}", response_class=HTMLResponse)
@@ -72,13 +75,20 @@ async def order_detail(request: Request, order_id: int):
     if not order:
         return HTMLResponse("Không tìm thấy đơn hàng", status_code=404)
 
-    return templates.TemplateResponse("order_detail.html", {
-        "request": request,
-        "order": order,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="order_detail.html",
+        context={"order": dict(order)},
+    )
 
 
-@app.post("/orders/{order_id}/delivered")
+@app.post("/orders/{order_id}/delete")
+async def delete_order(order_id: int, request: Request):
+    pool = await get_pool()
+    await pool.execute("DELETE FROM orders WHERE id = $1", order_id)
+    ref = request.headers.get("referer", "/")
+    # Quay về trang chủ, giữ nguyên tháng đang xem
+    return RedirectResponse(url="/", status_code=303)
 async def set_delivered(order_id: int, delivered_at: str = Form(...)):
     try:
         d = date.fromisoformat(delivered_at)
