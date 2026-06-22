@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}VAorder — Tháng {{ month }}/{{ year }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Tháng {{ "%02d"|format(month) }}/{{ year }}</h1>
+  <form method="get" action="/">
+    <input type="month" name="month" value="{{ selected_month }}" onchange="this.form.submit()">
+  </form>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="label">Tổng đơn</span><span class="value">{{ orders|length }}</span></div>
+  <div class="stat"><span class="label">Tổng CNY</span><span class="value">¥{{ "{:,.0f}".format(total_cny) }}</span></div>
+  <div class="stat"><span class="label">Tổng VND</span><span class="value">{{ "{:,.0f}".format(total_vnd) }}đ</span></div>
+  <div class="stat"><span class="label">✅ Đã giao</span><span class="value">{{ delivered }}</span></div>
+  <div class="stat"><span class="label">🚚 Đang về</span><span class="value">{{ with_tracking - delivered }}</span></div>
+  <div class="stat"><span class="label">⏳ Chờ</span><span class="value">{{ pending }}</span></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Tên SP</th>
+        <th>SL</th>
+        <th>CNY</th>
+        <th>Tracking</th>
+        <th>Ngày đặt</th>
+        <th>Đã giao</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr onclick="location.href='/orders/{{ o.id }}'" style="cursor:pointer">
+        <td>
+          {% if o.delivered_at %}✅{% elif o.tracking_number %}🚚{% else %}⏳{% endif %}
+          {{ o.product_name }}
+        </td>
+        <td>{{ o.quantity }}</td>
+        <td>¥{{ "{:,.0f}".format(o.total_cny) }}</td>
+        <td>{{ o.tracking_number or "—" }}</td>
+        <td>{{ o.order_date.strftime("%d/%m") if o.order_date else "?" }}</td>
+        <td>{{ o.delivered_at.strftime("%d/%m") if o.delivered_at else "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">Không có đơn nào trong tháng này.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ order.product_name }} — VAorder{% endblock %}
+
+{% block content %}
+<a href="/" class="back">← Quay lại</a>
+
+<div class="detail-card">
+  <h2>{{ order.product_name }}</h2>
+
+  <div class="detail-row"><span>Số lượng</span><span>{{ order.quantity }}</span></div>
+  {% if order.unit_price_cny %}
+  <div class="detail-row"><span>Đơn giá</span><span>¥{{ "{:,.0f}".format(order.unit_price_cny) }}/cái</span></div>
+  {% endif %}
+  <div class="detail-row"><span>Tổng tiền</span><span>¥{{ "{:,.0f}".format(order.total_cny) }}</span></div>
+  <div class="detail-row"><span>Ngày đặt</span><span>{{ order.order_date.strftime("%d/%m/%Y") if order.order_date else "Không rõ" }}</span></div>
+  <div class="detail-row"><span>Tracking</span><span>{{ order.tracking_number or "Chưa có" }}</span></div>
+  {% if order.carrier %}
+  <div class="detail-row"><span>Carrier</span><span>{{ order.carrier }}</span></div>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <div class="delivered-section">
+    <label><strong>Ngày giao hàng thành công:</strong></label>
+    <form method="post" action="/orders/{{ order.id }}/delivered" class="date-form">
+      <input type="date" name="delivered_at"
+             value="{{ order.delivered_at.isoformat() if order.delivered_at else '' }}">
+      <button type="submit" class="btn-save">💾 Lưu</button>
+    </form>
+    {% if order.delivered_at %}
+    <p class="delivered-badge">✅ Đã giao: {{ order.delivered_at.strftime("%d/%m/%Y") }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
