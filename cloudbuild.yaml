@@ -44,3 +44,6 @@ steps:
 
 images:
   - 'asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
