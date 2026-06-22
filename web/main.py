@@ -1,13 +1,16 @@
 from datetime import date, datetime
 from typing import Optional
+import os
 
 import asyncpg
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
 
-from bot.config import DATABASE_URL
+load_dotenv()
+
 from bot.services.db import get_pool, get_setting
 
 app = FastAPI(title="VAorder Dashboard")

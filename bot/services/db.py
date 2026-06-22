@@ -1,5 +1,5 @@
+import os
 import asyncpg
-from bot.config import DATABASE_URL
 
 _pool = None
 
@@ -7,7 +7,8 @@ _pool = None
 async def get_pool():
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=5)
+        database_url = os.environ["DATABASE_URL"]
+        _pool = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
     return _pool
 
 
