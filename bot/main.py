@@ -1,4 +1,9 @@
+import asyncio
 import logging
+import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
@@ -15,6 +20,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok")
+
+    def log_message(self, format, *args):
+        pass  # tắt access log
+
+
+def start_health_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    logger.info("Health server on port %d", port)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📦 *VAorder Bot*\n\n"
@@ -29,6 +52,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    start_health_server()
+
     app = Application.builder().token(TELEGRAM_TOKEN).build()
 
     user_only = filters.User(user_id=TELEGRAM_USER_ID)
@@ -38,11 +63,9 @@ def main():
     app.add_handler(CommandHandler("setrate", setrate_handler, filters=user_only))
     app.add_handler(CommandHandler("pending", pending_handler, filters=user_only))
 
-    # Callback handlers cho confirm/cancel đơn hàng
     app.add_handler(CallbackQueryHandler(handle_confirm_order, pattern=r"^confirm_order$"))
     app.add_handler(CallbackQueryHandler(handle_cancel_order, pattern=r"^cancel_order$"))
 
-    # ConversationHandlers
     app.add_handler(build_photo_handler(user_only))
     app.add_handler(build_tracking_handler())
 
