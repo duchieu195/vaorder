@@ -1,0 +1,46 @@
+steps:
+  # Build image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA', '.']
+
+  # Push image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA']
+
+  # Deploy bot service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'vaorder-bot'
+      - '--image=asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA'
+      - '--region=asia-northeast1'
+      - '--platform=managed'
+      - '--no-allow-unauthenticated'
+      - '--command=python'
+      - '--args=-m,bot.main'
+      - '--min-instances=1'
+      - '--max-instances=1'
+      - '--memory=512Mi'
+
+  # Deploy web service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'vaorder-web'
+      - '--image=asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA'
+      - '--region=asia-northeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--command=uvicorn'
+      - '--args=web.main:app,--host,0.0.0.0,--port,8080'
+      - '--min-instances=0'
+      - '--max-instances=1'
+      - '--memory=512Mi'
+      - '--port=8080'
+
+images:
+  - 'asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA'
