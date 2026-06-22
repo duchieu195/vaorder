@@ -23,6 +23,7 @@ steps:
       - '--min-instances=1'
       - '--max-instances=1'
       - '--memory=512Mi'
+      - '--set-env-vars=TELEGRAM_TOKEN=8951254582:AAFm5KEjSim-RhfIrh3yS04YUbAihEaNOE0,TELEGRAM_USER_ID=1081559358,ANTHROPIC_API_KEY=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_AUTH_TOKEN=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_BASE_URL=https://api.coffeevibeai.com,DATABASE_URL=postgresql://postgres.yczylsdyznfklxkmnihj:dockaz-0xocvu-wustaR@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
 
   # Deploy web service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -41,6 +42,7 @@ steps:
       - '--max-instances=1'
       - '--memory=512Mi'
       - '--port=8080'
+      - '--set-env-vars=ANTHROPIC_API_KEY=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_AUTH_TOKEN=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_BASE_URL=https://api.coffeevibeai.com,DATABASE_URL=postgresql://postgres.yczylsdyznfklxkmnihj:dockaz-0xocvu-wustaR@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
 
 images:
   - 'asia-northeast1-docker.pkg.dev/vaorder/vaorder/app:$COMMIT_SHA'
