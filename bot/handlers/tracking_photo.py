@@ -256,12 +256,13 @@ async def handle_add_order_number(update: Update, context: ContextTypes.DEFAULT_
 
     try:
         order_id = int(query.data.split("_", 3)[3])
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error("Bad callback data: %s", query.data)
         return
 
     context.user_data["order_num_order_id"] = order_id
     context.user_data["order_num_msg_id"] = query.message.message_id
+    context.user_data["waiting_for_order_num"] = True
 
     logger.info("Waiting for order number input, order_id=%s", order_id)
 
@@ -272,11 +273,75 @@ async def handle_add_order_number(update: Update, context: ContextTypes.DEFAULT_
         )
     except Exception as e:
         logger.error("edit_message_text error in handle_add_order_number: %s", e)
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="💬 Nhập mã đơn hàng:",
-        )
-    return AWAIT_ORDER_NUMBER
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="💬 Nhập mã đơn hàng:")
+
+
+async def handle_order_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.user_data.get("waiting_for_order_num"):
+        return  # không phải đang chờ nhập mã đơn
+    order_number = update.message.text.strip()
+    order_id = context.user_data.pop("order_num_order_id", None)
+    msg_id = context.user_data.pop("order_num_msg_id", None)
+    context.user_data.pop("waiting_for_order_num", None)
+
+    if not order_id:
+        await update.message.reply_text("❌ Phiên hết hạn. Thử lại.")
+        return
+
+    try:
+        await update_order_number(order_id, order_number)
+    except Exception as e:
+        logger.error("DB update order_number error: %s", e)
+        await update.message.reply_text("❌ Lỗi lưu DB.")
+        return
+
+    try:
+        await update.message.delete()
+    except Exception:
+        pass
+
+    if msg_id:
+        order = await get_order(order_id)
+        if order:
+            new_text = _inbox_text(
+                product_name=order["product_name"],
+                quantity=order["quantity"],
+                total_cny=float(order["total_cny"]) if order["total_cny"] else None,
+                delivered_at=order["delivered_at"],
+                tracking_number=order["tracking_number"],
+                carrier=order["carrier"],
+                order_number=order_number,
+            )
+            try:
+                await context.bot.edit_message_text(
+                    chat_id=update.effective_chat.id,
+                    message_id=msg_id,
+                    text=new_text,
+                    parse_mode="HTML",
+                )
+            except Exception as e:
+                logger.warning("Could not edit inbox message: %s", e)
+
+
+def build_tracking_photo_handler(user_filter):
+    photo_filter = filters.PHOTO & ~filters.Caption(strings=["/order"]) & user_filter
+    return ConversationHandler(
+        entry_points=[
+            MessageHandler(photo_filter, handle_tracking_photo),
+        ],
+        states={
+            AWAIT_MANUAL_TRACKING: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND & user_filter, handle_manual_tracking_input),
+            ],
+        },
+        fallbacks=[
+            CallbackQueryHandler(handle_cancel_tracking_photo, pattern=r"^cancel_tracking_photo$"),
+        ],
+        per_user=True,
+        per_chat=True,
+        per_message=False,
+        allow_reentry=True,
+    )
 
 
 async def handle_order_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE):

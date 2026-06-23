@@ -14,6 +14,8 @@ from bot.handlers.tracking_photo import (
     build_tracking_photo_handler,
     handle_confirm_tracking_photo,
     handle_cancel_tracking_photo,
+    handle_add_order_number,
+    handle_order_number_input,
 )
 from bot.handlers.report import report_handler
 from bot.handlers.settings import setrate_handler, pending_handler
@@ -74,10 +76,13 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_cancel_order, pattern=r"^cancel_order$"))
     app.add_handler(CallbackQueryHandler(handle_confirm_tracking_photo, pattern=r"^confirm_tracking_photo$"))
     app.add_handler(CallbackQueryHandler(handle_cancel_tracking_photo, pattern=r"^cancel_tracking_photo$"))
+    app.add_handler(CallbackQueryHandler(handle_add_order_number, pattern=r"^add_order_num_\d+$"))
 
     app.add_handler(build_tracking_photo_handler(user_only))  # trước build_photo_handler
     app.add_handler(build_photo_handler(user_only))
     app.add_handler(build_tracking_handler())
+    # Top-level text handler cho nhập mã đơn (phải sau ConversationHandler)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & user_only, handle_order_number_input))
 
     logger.info("Bot started")
     app.run_polling()
