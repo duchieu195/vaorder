@@ -78,16 +78,23 @@ async def _process_photos(messages: list, context: ContextTypes.DEFAULT_TYPE):
     # Merge results
     merged = _merge_results(results)
 
+    # Caption override: ưu tiên caption hơn OCR-detected order_number
+    caption_order = context.user_data.pop("caption_order_number", None)
+    if caption_order:
+        merged["order_number"] = caption_order
+
     context.user_data["pending_tracking"] = merged
     context.user_data["pending_tracking_status_msg_id"] = status_msg.message_id
 
     if merged["tracking_number"]:
         price_line = f"💰 ¥{merged['total_cny']:.2f}\n" if merged["total_cny"] else ""
+        order_num_line = f"🔖 Mã đơn: <code>{merged['order_number']}</code>\n" if merged.get("order_number") else ""
         text = (
             f"📦 <b>{merged['product_name']}</b> x{merged['quantity']}\n"
             f"{price_line}"
-            f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>"
-        )
+            f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>\n"
+            f"{order_num_line}"
+        ).rstrip()
         keyboard = [[
             InlineKeyboardButton("✅ Lưu", callback_data="confirm_tracking_photo"),
             InlineKeyboardButton("❌ Hủy", callback_data="cancel_tracking_photo"),
@@ -142,16 +149,25 @@ def _merge_results(results: list) -> dict:
 
 async def handle_tracking_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+
+    # Lưu caption làm order_number nếu có (bỏ qua "/order")
+    caption = (msg.caption or "").strip()
+    if caption and caption.lower() != "/order":
+        context.user_data["caption_order_number"] = caption
+
     if not msg.media_group_id:
         await _process_photos([msg], context)
         return
 
-    # Buffer media group
+    # Buffer media group — chỉ lưu caption từ ảnh đầu tiên
     group_id = msg.media_group_id
     groups = context.bot_data.setdefault("media_groups", {})
 
     if group_id not in groups:
         groups[group_id] = {"messages": [], "task": None}
+    else:
+        # Ảnh sau trong album — không override caption đã lưu
+        context.user_data.pop("caption_order_number_temp", None)
 
     groups[group_id]["messages"].append(msg)
 
@@ -217,11 +233,15 @@ async def handle_confirm_tracking_photo(update: Update, context: ContextTypes.DE
             delivered_at=data.get("delivered_at"),
         )
 
-        await inbox_msg.edit_reply_markup(
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("✏️ Nhập mã đơn", callback_data=f"add_order_num_{order_id}")
-            ]])
-        )
+        # Có order_number rồi → xóa nút; chưa có → giữ nút nhập tay
+        if data.get("order_number"):
+            await inbox_msg.edit_reply_markup(reply_markup=None)
+        else:
+            await inbox_msg.edit_reply_markup(
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("✏️ Nhập mã đơn", callback_data=f"add_order_num_{order_id}")
+                ]])
+            )
 
         try:
             await query.edit_message_text("✅ Đã lưu đơn hàng!")
