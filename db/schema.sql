@@ -5,6 +5,7 @@ CREATE TABLE orders (
     unit_price_cny        NUMERIC(10,2),
     total_cny             NUMERIC(10,2) NOT NULL,
     order_date            DATE,
+    order_number          VARCHAR(100),
     tracking_number       VARCHAR(100),
     carrier               VARCHAR(50),
     delivered_at          DATE,

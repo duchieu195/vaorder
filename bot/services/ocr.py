@@ -21,6 +21,7 @@ EXTRACT_PROMPT = """Đây là ảnh đơn hàng từ Tmall hoặc Taobao (Trung 
 
 Hãy trích xuất thông tin sau và trả về JSON hợp lệ:
 {
+  "order_number": "mã đơn hàng hoặc null nếu không có",
   "product_name": "tên sản phẩm dịch sang tiếng Việt",
   "quantity": số_lượng_nguyên,
   "unit_price_cny": đơn_giá_CNY_số_thực,
@@ -29,6 +30,7 @@ Hãy trích xuất thông tin sau và trả về JSON hợp lệ:
 }
 
 Quy tắc:
+- order_number: mã đơn hàng (dãy số dài, thường bắt đầu bằng số, ví dụ: 123456789012345678); null nếu không tìm thấy
 - product_name: dịch tên sản phẩm sang tiếng Việt, ngắn gọn
 - quantity: số nguyên, mặc định 1 nếu không có
 - unit_price_cny: đơn giá mỗi sản phẩm; nếu không có thì tính = total_cny / quantity
@@ -85,6 +87,7 @@ def extract_order_from_image(image_path: str) -> dict | None:
         return None
 
     return {
+        "order_number": data.get("order_number"),
         "product_name": data.get("product_name", "Sản phẩm không rõ"),
         "quantity": int(data.get("quantity") or 1),
         "unit_price_cny": float(data.get("unit_price_cny") or 0),

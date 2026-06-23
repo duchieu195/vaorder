@@ -25,13 +25,16 @@ def _format_confirm(data: dict) -> str:
     unit = data.get("unit_price_cny")
     total = data["total_cny"]
     order_date = data.get("order_date") or "không rõ"
+    order_num = data.get("order_number")
 
     unit_str = f"¥{unit:.0f}/cái — " if unit else ""
+    order_num_str = f"\n🔖 Mã đơn: <code>{order_num}</code>" if order_num else ""
     return (
         f"📦 <b>{data['product_name']}</b>\n"
         f"🔢 Số lượng: {qty}x\n"
         f"💰 {unit_str}Tổng: <b>¥{total:.0f}</b>\n"
-        f"📅 Ngày đặt: {order_date}\n\n"
+        f"📅 Ngày đặt: {order_date}"
+        f"{order_num_str}\n\n"
         "Xác nhận lưu đơn này?"
     )
 
@@ -96,9 +99,12 @@ async def handle_confirm_order(update: Update, context: ContextTypes.DEFAULT_TYP
         order_date = date.today()
 
     # Post inbox message first (we need its message_id)
+    order_num = data.get("order_number")
+    order_num_str = f"\n🔖 <code>{order_num}</code>" if order_num else ""
     inbox_text = (
         f"📦 <b>{data['product_name']}</b> x{data['quantity']} — ¥{data['total_cny']:.0f}\n"
-        f"📅 {order_date.strftime('%d/%m/%Y')}\n"
+        f"📅 {order_date.strftime('%d/%m/%Y')}"
+        f"{order_num_str}\n"
         f"📮 Tracking: <i>chưa có</i>"
     )
     inbox_msg = await context.bot.send_message(
@@ -118,6 +124,7 @@ async def handle_confirm_order(update: Update, context: ContextTypes.DEFAULT_TYP
             total_cny=data["total_cny"],
             order_date=order_date,
             telegram_message_id=inbox_msg.message_id,
+            order_number=data.get("order_number"),
         )
     except Exception as e:
         logger.error("DB insert error: %s", e)

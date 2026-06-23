@@ -12,15 +12,15 @@ async def get_pool():
     return _pool
 
 
-async def insert_order(product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id):
+async def insert_order(product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number=None):
     pool = await get_pool()
     return await pool.fetchval(
         """
-        INSERT INTO orders (product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO orders (product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
         """,
-        product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id,
+        product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number,
     )
 
 

@@ -25,6 +25,7 @@
         <th>Tên SP</th>
         <th>SL</th>
         <th>CNY</th>
+        <th>Mã đơn</th>
         <th>Tracking</th>
         <th>Ngày đặt</th>
         <th>Đã giao</th>
@@ -39,6 +40,7 @@
         </td>
         <td>{{ o.quantity }}</td>
         <td>¥{{ "{:,.0f}".format(o.total_cny) }}</td>
+        <td><small>{{ o.order_number or "—" }}</small></td>
         <td>{{ o.tracking_number or "—" }}</td>
         <td>{{ o.order_date.strftime("%d/%m") if o.order_date else "?" }}</td>
         <td>{{ o.delivered_at.strftime("%d/%m") if o.delivered_at else "—" }}</td>

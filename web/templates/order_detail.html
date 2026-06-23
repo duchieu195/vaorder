@@ -13,6 +13,9 @@
   {% endif %}
   <div class="detail-row"><span>Tổng tiền</span><span>¥{{ "{:,.0f}".format(order.total_cny) }}</span></div>
   <div class="detail-row"><span>Ngày đặt</span><span>{{ order.order_date.strftime("%d/%m/%Y") if order.order_date else "Không rõ" }}</span></div>
+  {% if order.order_number %}
+  <div class="detail-row"><span>Mã đơn hàng</span><span><code>{{ order.order_number }}</code></span></div>
+  {% endif %}
   <div class="detail-row"><span>Tracking</span><span>{{ order.tracking_number or "Chưa có" }}</span></div>
   {% if order.carrier %}
   <div class="detail-row"><span>Carrier</span><span>{{ order.carrier }}</span></div>
