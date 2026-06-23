@@ -89,8 +89,21 @@ def _call_vision_api(image_path: str, prompt: str) -> dict | None:
 
     resp = httpx.post(_API_ENDPOINT, headers=_HEADERS, json=payload, timeout=60)
     resp.raise_for_status()
-    text = resp.json()["content"][0]["text"]
-    logger.info("OCR raw response: %s", text)
+
+    body = resp.json()
+    logger.info("OCR full response: %s", json.dumps(body)[:500])
+
+    # Tìm content block có type=text
+    content_blocks = body.get("content", [])
+    text = None
+    for block in content_blocks:
+        if block.get("type") == "text":
+            text = block["text"]
+            break
+
+    if not text:
+        logger.error("No text block in response: %s", content_blocks)
+        return None
 
     text = text.strip()
     if text.startswith("```"):
