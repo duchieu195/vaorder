@@ -12,15 +12,15 @@ async def get_pool():
     return _pool
 
 
-async def insert_order(product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number=None):
+async def insert_order(product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number=None, tracking_number=None, carrier=None):
     pool = await get_pool()
     return await pool.fetchval(
         """
-        INSERT INTO orders (product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO orders (product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number, tracking_number, carrier)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id
         """,
-        product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number,
+        product_name, quantity, unit_price_cny, total_cny, order_date, telegram_message_id, order_number, tracking_number, carrier,
     )
 
 
@@ -29,6 +29,14 @@ async def update_tracking(order_id, tracking_number, carrier):
     await pool.execute(
         "UPDATE orders SET tracking_number = $1, carrier = $2 WHERE id = $3",
         tracking_number, carrier, order_id,
+    )
+
+
+async def update_order_number(order_id, order_number):
+    pool = await get_pool()
+    await pool.execute(
+        "UPDATE orders SET order_number = $1 WHERE id = $2",
+        order_number, order_id,
     )
 
 

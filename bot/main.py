@@ -10,6 +10,11 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from bot.config import TELEGRAM_TOKEN, TELEGRAM_USER_ID
 from bot.handlers.photo import build_photo_handler, handle_confirm_order, handle_cancel_order
 from bot.handlers.tracking import build_tracking_handler
+from bot.handlers.tracking_photo import (
+    build_tracking_photo_handler,
+    handle_confirm_tracking_photo,
+    handle_cancel_tracking_photo,
+)
 from bot.handlers.report import report_handler
 from bot.handlers.settings import setrate_handler, pending_handler
 
@@ -41,7 +46,9 @@ def start_health_server():
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📦 *VAorder Bot*\n\n"
-        "Gửi ảnh đơn hàng Tmall/Taobao để lưu vào sổ nhập.\n\n"
+        "*Cách nhập đơn:*\n"
+        "• Gửi ảnh tracking page → tự động lưu đơn có tracking\n"
+        "• Gửi ảnh + caption `/order` → nhập đơn hàng Tmall/Taobao\n\n"
         "*Lệnh:*\n"
         "/report — Báo cáo tháng hiện tại\n"
         "/report MM/YYYY — Báo cáo theo tháng\n"
@@ -65,7 +72,10 @@ def main():
 
     app.add_handler(CallbackQueryHandler(handle_confirm_order, pattern=r"^confirm_order$"))
     app.add_handler(CallbackQueryHandler(handle_cancel_order, pattern=r"^cancel_order$"))
+    app.add_handler(CallbackQueryHandler(handle_confirm_tracking_photo, pattern=r"^confirm_tracking_photo$"))
+    app.add_handler(CallbackQueryHandler(handle_cancel_tracking_photo, pattern=r"^cancel_tracking_photo$"))
 
+    app.add_handler(build_tracking_photo_handler(user_only))  # trước build_photo_handler
     app.add_handler(build_photo_handler(user_only))
     app.add_handler(build_tracking_handler())
 

@@ -241,8 +241,9 @@ async def manual_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def build_photo_handler(user_filter):
+    order_filter = filters.PHOTO & filters.Caption(strings=["/order"]) & user_filter
     return ConversationHandler(
-        entry_points=[MessageHandler(filters.PHOTO & user_filter, handle_photo)],
+        entry_points=[MessageHandler(order_filter, handle_photo)],
         states={
             MANUAL_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, manual_name)],
             MANUAL_QTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, manual_qty)],
