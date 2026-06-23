@@ -13,9 +13,6 @@
   <div class="stat"><span class="label">Tổng đơn</span><span class="value">{{ orders|length }}</span></div>
   <div class="stat"><span class="label">Tổng CNY</span><span class="value">¥{{ "{:,.0f}".format(total_cny) }}</span></div>
   <div class="stat"><span class="label">Tổng VND</span><span class="value">{{ "{:,.0f}".format(total_vnd) }}đ</span></div>
-  <div class="stat"><span class="label">✅ Đã giao</span><span class="value">{{ delivered }}</span></div>
-  <div class="stat"><span class="label">🚚 Đang về</span><span class="value">{{ with_tracking - delivered }}</span></div>
-  <div class="stat"><span class="label">⏳ Chờ</span><span class="value">{{ pending }}</span></div>
 </div>
 
 <div class="table-wrap">

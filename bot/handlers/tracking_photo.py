@@ -23,14 +23,14 @@ AWAIT_ORDER_NUMBER = 21
 _MEDIA_GROUP_DELAY = 1.5  # seconds to wait for remaining photos in album
 
 
-def _inbox_text(product_name, quantity, total_cny, order_date, tracking_number, carrier, order_number):
+def _inbox_text(product_name, quantity, total_cny, delivered_at, tracking_number, carrier, order_number):
     tracking_str = f"🚚 {carrier}: {tracking_number}" if tracking_number else "📮 Tracking: chưa có"
     order_num_str = f"\n🔖 Mã đơn: {order_number}" if order_number else "\n🔖 Mã đơn: chưa có"
-    date_str = order_date.strftime("%d/%m/%Y") if order_date else datetime.now().strftime("%d/%m/%Y")
+    date_str = f"✅ Ngày giao: {delivered_at.strftime('%d/%m/%Y')}" if delivered_at else "🕐 Chưa giao"
     price_str = f" — ¥{total_cny:.2f}" if total_cny else ""
     return (
         f"📦 <b>{product_name}</b> x{quantity}{price_str}\n"
-        f"📅 {date_str}\n"
+        f"{date_str}\n"
         f"{tracking_str}"
         f"{order_num_str}"
     )
@@ -138,6 +138,7 @@ def _merge_results(results: list) -> dict:
         "quantity": quantity,
         "unit_price_cny": unit_price_cny,
         "total_cny": total_cny,
+        "delivered_at": next((r["delivered_at"] for r in results if r.get("delivered_at")), None),
     }
 
 
@@ -185,7 +186,7 @@ async def handle_confirm_tracking_photo(update: Update, context: ContextTypes.DE
         product_name=data["product_name"],
         quantity=data["quantity"],
         total_cny=data.get("total_cny"),
-        order_date=date.today(),
+        delivered_at=data.get("delivered_at"),
         tracking_number=data.get("tracking_number"),
         carrier=data.get("carrier"),
         order_number=data.get("order_number"),
@@ -205,11 +206,12 @@ async def handle_confirm_tracking_photo(update: Update, context: ContextTypes.DE
             quantity=data["quantity"],
             unit_price_cny=data.get("unit_price_cny"),
             total_cny=data.get("total_cny") or 0,
-            order_date=date.today(),
+            order_date=data.get("delivered_at") or date.today(),
             telegram_message_id=inbox_msg.message_id,
             order_number=data.get("order_number"),
             tracking_number=data.get("tracking_number"),
             carrier=data.get("carrier"),
+            delivered_at=data.get("delivered_at"),
         )
     except Exception as e:
         logger.error("DB insert error: %s", e)
