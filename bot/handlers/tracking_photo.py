@@ -176,29 +176,34 @@ async def handle_confirm_tracking_photo(update: Update, context: ContextTypes.DE
     context.user_data.pop("pending_tracking_needs_manual", None)
 
     if not data:
-        await query.edit_message_text("❌ Không tìm thấy dữ liệu. Thử lại.")
+        try:
+            await query.edit_message_text("⚠️ Phiên đã hết hạn (bot vừa restart). Gửi lại ảnh để tiếp tục.")
+        except Exception:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="⚠️ Phiên đã hết hạn. Gửi lại ảnh để tiếp tục.",
+            )
         return
 
-    # Build inbox message first to get message_id
-    inbox_text = _inbox_text(
-        product_name=data["product_name"],
-        quantity=data["quantity"],
-        total_cny=data.get("total_cny"),
-        delivered_at=data.get("delivered_at"),
-        tracking_number=data.get("tracking_number"),
-        carrier=data.get("carrier"),
-        order_number=data.get("order_number"),
-    )
-    inbox_msg = await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=inbox_text,
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("✏️ Nhập mã đơn", callback_data="add_order_num_PLACEHOLDER")
-        ]]),
-    )
-
     try:
+        inbox_text = _inbox_text(
+            product_name=data["product_name"],
+            quantity=data["quantity"],
+            total_cny=data.get("total_cny"),
+            delivered_at=data.get("delivered_at"),
+            tracking_number=data.get("tracking_number"),
+            carrier=data.get("carrier"),
+            order_number=data.get("order_number"),
+        )
+        inbox_msg = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=inbox_text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("✏️ Nhập mã đơn", callback_data="add_order_num_PLACEHOLDER")
+            ]]),
+        )
+
         order_id = await insert_order(
             product_name=data["product_name"],
             quantity=data["quantity"],
@@ -211,25 +216,29 @@ async def handle_confirm_tracking_photo(update: Update, context: ContextTypes.DE
             carrier=data.get("carrier"),
             delivered_at=data.get("delivered_at"),
         )
+
+        await inbox_msg.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("✏️ Nhập mã đơn", callback_data=f"add_order_num_{order_id}")
+            ]])
+        )
+
+        try:
+            await query.edit_message_text("✅ Đã lưu đơn hàng!")
+        except Exception:
+            pass
+        await asyncio.sleep(3)
+        try:
+            await query.delete_message()
+        except Exception:
+            pass
+
     except Exception as e:
-        logger.error("DB insert error: %s", e)
-        await inbox_msg.delete()
-        await query.edit_message_text("❌ Lỗi lưu DB. Thử lại sau.")
-        return
-
-    await inbox_msg.edit_reply_markup(
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("✏️ Nhập mã đơn", callback_data=f"add_order_num_{order_id}")
-        ]])
-    )
-
-    await query.edit_message_text("✅ Đã lưu đơn hàng!")
-    import asyncio as _asyncio
-    await _asyncio.sleep(3)
-    try:
-        await query.delete_message()
-    except Exception:
-        pass
+        logger.error("handle_confirm_tracking_photo error: %s", e)
+        try:
+            await query.edit_message_text("❌ Lỗi lưu đơn. Thử lại sau.")
+        except Exception:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Lỗi lưu đơn. Thử lại sau.")
 
 
 async def handle_cancel_tracking_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -245,15 +254,28 @@ async def handle_add_order_number(update: Update, context: ContextTypes.DEFAULT_
     query = update.callback_query
     await query.answer()
 
-    order_id = int(query.data.split("_", 3)[3])
+    try:
+        order_id = int(query.data.split("_", 3)[3])
+    except (ValueError, IndexError) as e:
+        logger.error("Bad callback data: %s", query.data)
+        return
+
     context.user_data["order_num_order_id"] = order_id
     context.user_data["order_num_msg_id"] = query.message.message_id
-    context.user_data["order_num_original_text"] = query.message.text_html
 
-    await query.edit_message_text(
-        query.message.text_html + "\n\n💬 Nhập mã đơn hàng:",
-        parse_mode="HTML",
-    )
+    logger.info("Waiting for order number input, order_id=%s", order_id)
+
+    try:
+        await query.edit_message_text(
+            query.message.text_html + "\n\n💬 Nhập mã đơn hàng:",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.error("edit_message_text error in handle_add_order_number: %s", e)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="💬 Nhập mã đơn hàng:",
+        )
     return AWAIT_ORDER_NUMBER
 
 
