@@ -50,11 +50,20 @@ async def _process_photos(messages: list, context: ContextTypes.DEFAULT_TYPE):
         await file.download_to_drive(path)
         paths.append(path)
 
+    results = []
     try:
-        results = await asyncio.gather(*[
-            asyncio.get_event_loop().run_in_executor(None, extract_tracking_from_image, p)
+        loop = asyncio.get_running_loop()
+        ocr_results = await asyncio.gather(*[
+            loop.run_in_executor(None, extract_tracking_from_image, p)
             for p in paths
-        ])
+        ], return_exceptions=True)
+        for r in ocr_results:
+            if isinstance(r, Exception):
+                logger.error("OCR error: %s", r)
+            elif r:
+                results.append(r)
+    except Exception as e:
+        logger.error("_process_photos error: %s", e)
     finally:
         for p in paths:
             try:
@@ -62,7 +71,6 @@ async def _process_photos(messages: list, context: ContextTypes.DEFAULT_TYPE):
             except OSError:
                 pass
 
-    results = [r for r in results if r]
     if not results:
         await status_msg.edit_text("❌ Không đọc được thông tin từ ảnh. Thử lại hoặc gửi ảnh rõ hơn.")
         return
@@ -74,22 +82,12 @@ async def _process_photos(messages: list, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["pending_tracking_status_msg_id"] = status_msg.message_id
 
     if merged["tracking_number"]:
+        price_line = f"💰 ¥{merged['total_cny']:.2f}\n" if merged["total_cny"] else ""
         text = (
             f"📦 <b>{merged['product_name']}</b> x{merged['quantity']}\n"
-            f"💰 ¥{merged['total_cny']:.2f}\n" if merged['total_cny'] else
-            f"📦 <b>{merged['product_name']}</b> x{merged['quantity']}\n"
-        ) + f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>"
-        if merged["total_cny"]:
-            text = (
-                f"📦 <b>{merged['product_name']}</b> x{merged['quantity']}\n"
-                f"💰 ¥{merged['total_cny']:.2f}\n"
-                f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>"
-            )
-        else:
-            text = (
-                f"📦 <b>{merged['product_name']}</b> x{merged['quantity']}\n"
-                f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>"
-            )
+            f"{price_line}"
+            f"🚚 {merged['carrier']}: <code>{merged['tracking_number']}</code>"
+        )
         keyboard = [[
             InlineKeyboardButton("✅ Lưu", callback_data="confirm_tracking_photo"),
             InlineKeyboardButton("❌ Hủy", callback_data="cancel_tracking_photo"),
