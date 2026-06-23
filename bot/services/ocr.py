@@ -43,11 +43,18 @@ Chỉ trả về JSON, không giải thích thêm."""
 EXTRACT_TRACKING_PROMPT = """Đây là ảnh trang vận đơn / tracking page từ app giao hàng Trung Quốc
 (Cainiao, YTO, SF Express, ZTO, JD Logistics, v.v.)
 
+Trang này thường có 2 phần:
+- PHẦN TRÊN (CẦN ĐỌC): thông tin vận đơn — mã tracking, hãng vận chuyển, tên sản phẩm đang được giao, giá, số lượng, trạng thái giao hàng
+- PHẦN DƯỚI (BỎ QUA HOÀN TOÀN): gợi ý sản phẩm, quảng cáo — thường có tiêu đề 猜你喜欢 / 为你推荐 / 相关推荐 / Recommended / Suggested / Kéo xuống để xem thêm
+
+CHỈ đọc thông tin sản phẩm từ PHẦN TRÊN (đơn hàng đang vận chuyển).
+TUYỆT ĐỐI KHÔNG lấy tên sản phẩm, giá, hay số lượng từ phần gợi ý/quảng cáo ở cuối trang.
+
 Trích xuất thông tin sau, trả về JSON hợp lệ:
 {
   "tracking_number": "mã vận đơn (dãy số/chữ số dài) hoặc null",
   "carrier": "tên viết tắt: YTO/SF/ZTO/JD/4PX/YUNDA/STO/BEST/EMS hoặc null",
-  "product_name": "tên sản phẩm dịch sang tiếng Việt, ngắn gọn",
+  "product_name": "tên sản phẩm trong đơn hàng dịch sang tiếng Việt, ngắn gọn",
   "quantity": số_nguyên,
   "unit_price_cny": đơn_giá_hoặc_null,
   "total_cny": tổng_tiền_CNY_hoặc_null,
