@@ -34,19 +34,19 @@
     <tbody>
       {% for o in orders %}
       <tr onclick="location.href='/orders/{{ o.id }}'" style="cursor:pointer">
-        <td>
+        <td class="col-name" title="{{ o.product_name }}">
           {% if o.delivered_at %}✅{% elif o.tracking_number %}🚚{% else %}⏳{% endif %}
           {{ o.product_name }}
         </td>
-        <td>{{ o.quantity }}</td>
-        <td>¥{{ "{:,.0f}".format(o.total_cny) }}</td>
-        <td><small>{{ o.order_number or "—" }}</small></td>
-        <td>{{ o.tracking_number or "—" }}</td>
-        <td>{{ o.order_date.strftime("%d/%m") if o.order_date else "?" }}</td>
-        <td>{{ o.delivered_at.strftime("%d/%m") if o.delivered_at else "—" }}</td>
+        <td class="col-nowrap">{{ o.quantity }}</td>
+        <td class="col-nowrap">¥{{ "{:,.0f}".format(o.total_cny) }}</td>
+        <td class="col-nowrap"><small>{{ o.order_number or "—" }}</small></td>
+        <td class="col-nowrap">{{ o.tracking_number or "—" }}</td>
+        <td class="col-nowrap">{{ o.order_date.strftime("%d/%m") if o.order_date else "?" }}</td>
+        <td class="col-nowrap">{{ o.delivered_at.strftime("%d/%m") if o.delivered_at else "—" }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="empty">Không có đơn nào trong tháng này.</td></tr>
+      <tr><td colspan="7" class="empty">Không có đơn nào trong tháng này.</td></tr>
       {% endfor %}
     </tbody>
   </table>

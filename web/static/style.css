@@ -18,8 +18,10 @@ input[type="month"] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 
 /* Table */
 .table-wrap { overflow-x: auto; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 table { width: 100%; border-collapse: collapse; }
-th { background: #f0f0f0; padding: 10px 12px; text-align: left; font-size: 0.85rem; }
+th { background: #f0f0f0; padding: 10px 12px; text-align: left; font-size: 0.85rem; white-space: nowrap; }
 td { padding: 10px 12px; border-top: 1px solid #eee; font-size: 0.9rem; }
+td.col-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.col-nowrap { white-space: nowrap; }
 tr:hover td { background: #fafafa; }
 .empty { text-align: center; color: #888; padding: 24px; }
 

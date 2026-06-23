@@ -51,7 +51,8 @@ Trích xuất thông tin sau, trả về JSON hợp lệ:
   "quantity": số_nguyên,
   "unit_price_cny": đơn_giá_hoặc_null,
   "total_cny": tổng_tiền_CNY_hoặc_null,
-  "order_number": "mã đơn hàng Tmall/Taobao nếu có, null nếu không thấy"
+  "order_number": "mã đơn hàng Tmall/Taobao nếu có, null nếu không thấy",
+  "delivered_at": "YYYY-MM-DD nếu trạng thái là đã giao hàng (已签收/Delivered), null nếu chưa giao"
 }
 
 Carrier mapping:
@@ -107,6 +108,13 @@ def extract_tracking_from_image(image_path: str) -> dict | None:
     data = _call_vision_api(image_path, EXTRACT_TRACKING_PROMPT)
     if not data:
         return None
+    delivered_at = None
+    if data.get("delivered_at"):
+        try:
+            from datetime import date as _date
+            delivered_at = _date.fromisoformat(data["delivered_at"])
+        except (ValueError, TypeError):
+            pass
     return {
         "tracking_number": data.get("tracking_number") or None,
         "carrier": data.get("carrier") or None,
@@ -115,6 +123,7 @@ def extract_tracking_from_image(image_path: str) -> dict | None:
         "quantity": int(data.get("quantity") or 1),
         "unit_price_cny": float(data["unit_price_cny"]) if data.get("unit_price_cny") else None,
         "total_cny": float(data["total_cny"]) if data.get("total_cny") else None,
+        "delivered_at": delivered_at,
     }
 
 
