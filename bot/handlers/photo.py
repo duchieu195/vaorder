@@ -27,12 +27,12 @@ def _format_confirm(data: dict) -> str:
     order_date = data.get("order_date") or "không rõ"
     order_num = data.get("order_number")
 
-    unit_str = f"¥{unit:.0f}/cái — " if unit else ""
+    unit_str = f"¥{unit:.2f}/cái — " if unit else ""
     order_num_str = f"\n🔖 Mã đơn: <code>{order_num}</code>" if order_num else ""
     return (
         f"📦 <b>{data['product_name']}</b>\n"
         f"🔢 Số lượng: {qty}x\n"
-        f"💰 {unit_str}Tổng: <b>¥{total:.0f}</b>\n"
+        f"💰 {unit_str}Tổng: <b>¥{total:.2f}</b>\n"
         f"📅 Ngày đặt: {order_date}"
         f"{order_num_str}\n\n"
         "Xác nhận lưu đơn này?"
@@ -102,7 +102,7 @@ async def handle_confirm_order(update: Update, context: ContextTypes.DEFAULT_TYP
     order_num = data.get("order_number")
     order_num_str = f"\n🔖 <code>{order_num}</code>" if order_num else ""
     inbox_text = (
-        f"📦 <b>{data['product_name']}</b> x{data['quantity']} — ¥{data['total_cny']:.0f}\n"
+        f"📦 <b>{data['product_name']}</b> x{data['quantity']} — ¥{data['total_cny']:.2f}\n"
         f"📅 {order_date.strftime('%d/%m/%Y')}"
         f"{order_num_str}\n"
         f"📮 Tracking: <i>chưa có</i>"
@@ -204,7 +204,7 @@ async def manual_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total = m["total_cny"]
 
     inbox_text = (
-        f"📦 <b>{m['product_name']}</b> x{qty} — ¥{total:.0f}\n"
+        f"📦 <b>{m['product_name']}</b> x{qty} — ¥{total:.2f}\n"
         f"📅 {order_date.strftime('%d/%m/%Y')}\n"
         f"📮 Tracking: <i>chưa có</i>"
     )

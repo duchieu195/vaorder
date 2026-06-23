@@ -11,7 +11,7 @@
 
 <div class="stats">
   <div class="stat"><span class="label">Tổng đơn</span><span class="value">{{ orders|length }}</span></div>
-  <div class="stat"><span class="label">Tổng CNY</span><span class="value">¥{{ "{:,.0f}".format(total_cny) }}</span></div>
+  <div class="stat"><span class="label">Tổng CNY</span><span class="value">¥{{ "{:,.2f}".format(total_cny) }}</span></div>
   <div class="stat"><span class="label">Tổng VND</span><span class="value">{{ "{:,.0f}".format(total_vnd) }}đ</span></div>
 </div>
 
@@ -35,7 +35,7 @@
           {{ o.product_name }}
         </td>
         <td class="col-nowrap">{{ o.quantity }}</td>
-        <td class="col-nowrap">¥{{ "{:,.0f}".format(o.total_cny) }}</td>
+        <td class="col-nowrap">¥{{ "{:,.2f}".format(o.total_cny) }}</td>
         <td class="col-nowrap"><small>{{ o.order_number or "—" }}</small></td>
         <td class="col-nowrap">{{ o.tracking_number or "—" }}</td>
         <td class="col-nowrap">{{ o.delivered_at.strftime("%d/%m/%Y") if o.delivered_at else "—" }}</td>
