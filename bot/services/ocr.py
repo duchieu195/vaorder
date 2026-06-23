@@ -77,7 +77,7 @@ def _call_vision_api(image_path: str, prompt: str) -> dict | None:
 
     payload = {
         "model": "claude-sonnet-4-6",
-        "max_tokens": 512,
+        "max_tokens": 1024,
         "messages": [{
             "role": "user",
             "content": [
@@ -106,14 +106,22 @@ def _call_vision_api(image_path: str, prompt: str) -> dict | None:
         return None
 
     text = text.strip()
+    # Strip markdown code fences
     if text.startswith("```"):
         lines = text.split("\n")
         text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
+        text = text.strip()
+    # Extract first JSON object if there's surrounding text
+    if not text.startswith("{"):
+        import re
+        m = re.search(r'\{.*\}', text, re.DOTALL)
+        if m:
+            text = m.group(0)
 
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:
-        logger.error("JSON parse error: %s | raw: %s", e, text)
+        logger.error("JSON parse error: %s | raw: %s", e, text[:200])
         return None
 
 
