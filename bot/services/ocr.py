@@ -116,7 +116,7 @@ def extract_tracking_from_image(image_path: str) -> dict | None:
         except (ValueError, TypeError):
             pass
     return {
-        "tracking_number": data.get("tracking_number") or None,
+        "tracking_number": data["tracking_number"].replace(" ", "").strip() if data.get("tracking_number") else None,
         "carrier": data.get("carrier") or None,
         "order_number": data.get("order_number") or None,
         "product_name": data.get("product_name") or "Sản phẩm không rõ",
