@@ -25,6 +25,17 @@ steps:
       - '--memory=512Mi'
       - '--set-env-vars=TELEGRAM_TOKEN=8951254582:AAFm5KEjSim-RhfIrh3yS04YUbAihEaNOE0,TELEGRAM_USER_ID=1081559358,ANTHROPIC_API_KEY=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_AUTH_TOKEN=sk-40016bfa06a5222fc92e02761de1515319f5043e4cd53a2032ba562e6f966e3e,ANTHROPIC_BASE_URL=https://api.coffeevibeai.com,DATABASE_URL=postgresql://postgres.yczylsdyznfklxkmnihj:dockaz-0xocvu-wustaR@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
 
+  # Xóa revision cũ của bot (chỉ giữ revision mới nhất) để tránh Conflict polling
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        OLD=$(gcloud run revisions list --service=vaorder-bot --region=asia-northeast1 --format='value(metadata.name)' | tail -n +2)
+        for rev in $OLD; do
+          gcloud run revisions delete $$rev --region=asia-northeast1 --quiet || true
+        done
+
   # Deploy web service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
